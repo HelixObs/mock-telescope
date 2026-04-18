@@ -2,12 +2,11 @@
 CHIME pipeline simulator.
 
 Continuously generates fake data blocks → beam candidates → FRB events and
-ships them to the HelixObs gateway via OTLP.  Logs are shipped to Loki via
-the helixobs LokiHandler so every log line carries the helix entity context.
+ships them to the HelixObs gateway via OTLP.  Logs are written as structured
+JSON to stdout; Grafana Alloy collects them and forwards to Loki.
 
 Environment variables:
     GATEWAY_ENDPOINT   gRPC endpoint of the HelixObs gateway (default: gateway:4317)
-    LOKI_URL           Loki base URL for log shipping   (default: http://loki:3100)
     BLOCK_INTERVAL_S   Seconds between simulated data blocks (default: 3.0)
 """
 
@@ -17,17 +16,12 @@ import random
 import time
 import uuid
 
-from helixobs.logging import configure_logging, configure_loki
+from helixobs.logging import configure_logging
 from chime import CHIMEInstrument
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
 configure_logging()
-configure_loki(
-    url=os.environ.get("LOKI_URL", "http://loki:3100"),
-    labels={"app": "mock-telescope", "instrument": "CHIME"},
-    level=logging.INFO,
-)
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger("chime.simulator")
 
@@ -37,7 +31,7 @@ GATEWAY  = os.environ.get("GATEWAY_ENDPOINT", "gateway:4317")
 INTERVAL = float(os.environ.get("BLOCK_INTERVAL_S", "3.0"))
 
 tel = CHIMEInstrument(service_name="chime.simulator", endpoint=GATEWAY)
-log.info("CHIME simulator starting", extra={"gateway": GATEWAY, "interval_s": INTERVAL})
+log.info("CHIME simulator starting")
 
 # ── Simulation ────────────────────────────────────────────────────────────────
 
