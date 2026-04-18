@@ -55,8 +55,8 @@ def ingest_block() -> str:
         n_freq_channels=1024,
         duration_s=8.0,
     )
+    log.info("data block ingested")
     tel.complete(token)
-    log.info("data block ingested", extra={"block_id": block_id})
     return block_id
 
 
@@ -67,14 +67,20 @@ def classify_candidates(block_id: str) -> list[str]:
         beam    = random.randint(0, 255)
         cand_id = f"cand-{uuid.uuid4().hex[:12]}"
         token   = tel.track("frb-classifier", id=cand_id, parents=[block_id])
+        snr = round(random.uniform(8, 60), 1)
         tel.candidate_metadata(
             token,
             beam_id=beam,
             dm=round(random.uniform(50, 1500), 1),
-            snr=round(random.uniform(8, 60), 1),
+            snr=snr,
         )
-        tel.complete(token)
-        log.info("candidate classified", extra={"cand_id": cand_id, "beam": beam})
+        # ~15% chance of a noisy / RFI-flagged candidate that errors out
+        if random.random() < 0.15:
+            log.warning("candidate error: SNR threshold not met")
+            tel.error(token, {"message": "SNR threshold not met", "snr": snr, "beam": beam})
+        else:
+            log.info("candidate classified")
+            tel.complete(token)
         cand_ids.append(cand_id)
     return cand_ids
 
@@ -93,8 +99,8 @@ def cluster_event(cand_ids: list[str]) -> None:
             weights=[30, 10, 40, 20],
         )[0],
     )
+    log.info("event clustered")
     tel.complete(token)
-    log.info("event clustered", extra={"event_id": event_id, "n_candidates": len(cand_ids)})
 
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
