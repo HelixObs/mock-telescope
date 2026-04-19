@@ -20,12 +20,12 @@ P_RACK_DROPOUT      = 0.02   # 2%  of beams lose their FPGA rack
 P_BEAM_HAS_SIGNAL   = 1.0   # 100% of beams find candidates (~8 of 32)
 
 
-def process_beam(tel: CHIMEInstrument, block_id: str, beam_id: int) -> list[str]:
+def process_beam(tel: CHIMEInstrument, beam_id: int) -> list[str]:
     """Search one beam for candidates. Returns surviving candidate entity IDs."""
     rack = RACKS[beam_id % len(RACKS)]
-    beam_id_str = f"beam-{uuid.uuid4().hex[:12]}"
+    beam_id_str = f"beam-{beam_id}-{uuid.uuid4().hex[:12]}"
 
-    token = tel.track("l1-search", id=beam_id_str, parents=[block_id])
+    token = tel.track("l1-search", id=beam_id_str)
     tel.beam_metadata(token, beam_id=beam_id, rack=rack)
 
     if random.random() < P_RACK_DROPOUT:

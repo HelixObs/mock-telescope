@@ -12,7 +12,6 @@ from . import CHIMEInstrument
 
 log = logging.getLogger("chime.l2")
 
-MIN_CANDIDATES_FOR_EVENT = 2
 
 P_CLUSTERING_TIMEOUT = 0.01   # 1%  of blocks: insufficient beams reported in window
 P_RPC_FAILURE        = 0.10   # 10% of ring buffer RPC calls fail
@@ -20,7 +19,6 @@ P_RPC_FAILURE        = 0.10   # 10% of ring buffer RPC calls fail
 
 def cluster(
     tel: CHIMEInstrument,
-    block_id: str,
     all_cand_ids: list[str],
 ) -> str | None:
     """
@@ -31,7 +29,7 @@ def cluster(
     """
     if random.random() < P_CLUSTERING_TIMEOUT:
         cluster_id = f"l2cl-{uuid.uuid4().hex[:10]}"
-        token = tel.track("l2-clustering", id=cluster_id, parents=[block_id])
+        token = tel.track("l2-clustering", id=cluster_id)
         log.error(
             f"L2 clustering timeout: only {len(all_cand_ids)} candidate(s) received "
             "within aggregation window — too few beams reporting, skipping block"
@@ -42,12 +40,10 @@ def cluster(
         })
         return None
 
-    if len(all_cand_ids) < MIN_CANDIDATES_FOR_EVENT:
-        return None
-
     event_id = f"frb-{uuid.uuid4().hex[:12]}"
-    # Cap parents to avoid oversized spans when many candidates are present.
-    parents = all_cand_ids[:20]
+    # Sample a representative subset of candidates as parents.
+    k = min(random.choices([1, 2, 3], weights=[50, 40, 10])[0], len(all_cand_ids))
+    parents = random.sample(all_cand_ids, k) if k > 0 else []
     token = tel.track("l2-clustering", id=event_id, parents=parents)
 
     classification = random.choices(

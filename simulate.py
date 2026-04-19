@@ -47,25 +47,12 @@ log.info("CHIME simulator starting")
 
 
 def run_block() -> None:
-    block_id = f"block-{uuid.uuid4().hex[:12]}"
-
-    block_token = tel.track("x-engine", id=block_id)
-    tel.data_block_metadata(
-        block_token,
-        fpga_rack=random.choice(RACKS),
-        freq_min_mhz=400.0,
-        freq_max_mhz=800.0,
-        n_freq_channels=1024,
-        duration_s=8.0,
-    )
-    log.info("data block ingested")
-    tel.complete(block_token)
 
     # L1: run all beams in parallel
     all_cand_ids: list[str] = []
     with ThreadPoolExecutor(max_workers=N_BEAMS) as pool:
         futures = {
-            pool.submit(process_beam, tel, block_id, beam_id): beam_id
+            pool.submit(process_beam, tel, beam_id): beam_id
             for beam_id in range(N_BEAMS)
         }
         for fut in as_completed(futures):
@@ -78,23 +65,21 @@ def run_block() -> None:
 
     # L2: wait for aggregation window, then cluster
     time.sleep(L2_WINDOW)
-    event_id = cluster(tel, block_id, all_cand_ids)
+    event_id = cluster(tel, all_cand_ids)
 
     if event_id is None:
         return
 
     trigger_ring_buffer(tel, event_id)
 
-    # Post-detection pipeline
-    file_id = convert_to_hdf5(tel, event_id)
-    if file_id is None:
+    # Post-detection pipeline (child spans of the FRB event)
+    if convert_to_hdf5(tel, event_id) is None:
         return
 
-    reg_id = register_event(tel, event_id, file_id)
-    if reg_id is None:
+    if register_event(tel, event_id) is None:
         return
 
-    replicate(tel, event_id, reg_id)
+    replicate(tel, event_id)
 
 
 # ── Run loop ──────────────────────────────────────────────────────────────────
