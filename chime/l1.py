@@ -17,7 +17,7 @@ log = logging.getLogger("chime.l1")
 RACKS = [f"rack-{i}" for i in range(1, 9)]
 
 P_RACK_DROPOUT      = 0.02   # 2%  of beams lose their FPGA rack
-P_BEAM_HAS_SIGNAL   = 0.05   # 5%  of beams find any candidates
+P_BEAM_HAS_SIGNAL   = 0.25   # 25% of beams find candidates (~8 of 32)
 P_CANDIDATE_RFI     = 0.30   # 30% of candidates are RFI-flagged
 
 

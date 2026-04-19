@@ -38,7 +38,7 @@ log = logging.getLogger("chime.simulator")
 
 GATEWAY    = os.environ.get("GATEWAY_ENDPOINT", "gateway:4317")
 INTERVAL   = float(os.environ.get("BLOCK_INTERVAL_S", "12.0"))
-N_BEAMS    = int(os.environ.get("N_BEAMS", "1024"))
+N_BEAMS    = int(os.environ.get("N_BEAMS", "32"))     # 4 nodes × 8 beams
 L2_WINDOW  = float(os.environ.get("L2_WINDOW_S", "1.0"))
 
 RACKS = [f"rack-{i}" for i in range(1, 9)]
