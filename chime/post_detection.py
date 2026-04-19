@@ -28,13 +28,16 @@ def convert_to_hdf5(tel: CHIMEInstrument, event_id: str) -> str | None:
     token = tel.track("hdf5-conversion", id=file_id, parents=[event_id])
 
     if random.random() < P_HDF5_FAILURE:
-        log.error("HDF5 write failed")
+        log.error(
+            f"HDF5 write failed for event {event_id}: NFS mount unresponsive or scratch disk full, "
+            "raw voltage data at risk"
+        )
         tel.error(token, metadata={"message": "hdf5_write_error", "event_id": event_id})
         return None
 
     path    = f"/data/chime/frb/{event_id}.hdf5"
     size_mb = round(random.uniform(200.0, 800.0), 1)
-    log.info("HDF5 file written")
+    log.info(f"HDF5 conversion complete: {size_mb:.1f} MB written to {path}")
     tel.file_metadata(token, path=path, size_mb=size_mb)
     tel.complete(token)
     return file_id
@@ -50,11 +53,14 @@ def register_event(
     token = tel.track("registration", id=reg_id, parents=[event_id, file_id])
 
     if random.random() < P_REGISTRATION_CONFLICT:
-        log.error("registration conflict: duplicate event detected")
+        log.error(
+            f"registration conflict: event {event_id} already exists in catalog — "
+            "possible duplicate trigger from overlapping beam coverage"
+        )
         tel.error(token, metadata={"message": "registration_conflict", "event_id": event_id})
         return None
 
-    log.info("event registered in catalog")
+    log.info(f"event {event_id} registered in catalog with ID {reg_id}")
     tel.complete(token, metadata={"registration_id": reg_id})
     return reg_id
 
@@ -69,8 +75,11 @@ def replicate(tel: CHIMEInstrument, event_id: str, reg_id: str) -> None:
         tel.replication_metadata(token, dest=dest, size_mb=size_mb)
 
         if random.random() < P_REPLICATION_TIMEOUT:
-            log.warning("replication timeout")
+            log.error(
+                f"replication to {dest} timed out after partial transfer of {size_mb:.1f} MB "
+                "— remote HPC storage may be unavailable"
+            )
             tel.error(token, metadata={"message": "replication_timeout", "dest": dest})
         else:
-            log.info("data replicated offsite")
+            log.info(f"replication to {dest} complete: {size_mb:.1f} MB transferred successfully")
             tel.complete(token)
