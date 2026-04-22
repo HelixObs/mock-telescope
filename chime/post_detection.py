@@ -51,7 +51,10 @@ def register_event(tel: CHIMEInstrument, event_id: str) -> str | None:
                 f"registration conflict: event {event_id} already exists in catalog — "
                 "possible duplicate trigger from overlapping beam coverage"
             )
-            op.fail("registration_conflict")
+            op.fail("registration_conflict", metadata={
+                "helixSource": "https://github.com/HelixObs/mock-telescope/blob/main/chime/post_detection.py",
+                "helixSourceLine": 55,
+            })
             return None
 
         op.set_attribute("helix.chime.registration_status", "ok")
