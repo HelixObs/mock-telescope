@@ -2,8 +2,8 @@
 CHIME pipeline simulator.
 
 Continuously generates fake data blocks → beam candidates → FRB events and
-ships them to the HelixObs gateway via OTLP.  Logs are written as structured
-JSON to stdout; Grafana Alloy collects them and forwards to Loki.
+ships them to the HelixObs gateway via OTLP.  Logs are shipped directly to the OTel Collector via OTLP gRPC
+(configure_logging(otlp=True)); the Collector forwards them to Loki.
 
 Environment variables:
     GATEWAY_ENDPOINT   gRPC endpoint of the HelixObs gateway (default: gateway:4317)
@@ -26,7 +26,7 @@ from chime.post_detection import convert_to_hdf5, register_event, replicate
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
-configure_logging()
+configure_logging(otlp=True)
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger("chime.simulator")
 
