@@ -12,12 +12,11 @@ to it via entity_id and appear in the Entity Inspector's Trace panel.
 
 import logging
 import random
+import time
 
 from . import CHIMEInstrument
 
 log = logging.getLogger("chime.post_detection")
-
-REPLICATION_DESTS = ["cedar", "niagara", "narval"]
 
 P_HDF5_FAILURE           = 0.05   # 5%  of conversions fail (disk/NFS error)
 P_REGISTRATION_CONFLICT  = 0.03   # 3%  of registrations hit a duplicate
@@ -26,7 +25,7 @@ P_REPLICATION_TIMEOUT    = 0.08   # 8%  of replication transfers time out
 
 def convert_to_hdf5(tel: CHIMEInstrument, event_id: str) -> str | None:
     """Convert raw ring buffer data to HDF5. Returns event_id or None on failure."""
-    with tel.operate("hdf5-conversion", entity_id=event_id) as op:
+    with tel.operate("baseband_converter", entity_id=event_id) as op:
         if random.random() < P_HDF5_FAILURE:
             log.error(
                 f"HDF5 write failed for event {event_id}: NFS mount unresponsive or scratch disk full, "
@@ -45,7 +44,12 @@ def convert_to_hdf5(tel: CHIMEInstrument, event_id: str) -> str | None:
 
 def register_event(tel: CHIMEInstrument, event_id: str) -> str | None:
     """Register the event in the central catalog. Returns event_id or None on conflict."""
-    with tel.operate("registration", entity_id=event_id) as op:
+    with tel.operate("datatrail_registration", entity_id=event_id) as op:
+        log.info(f"Registering event {event_id}.")
+        with tel.child_span("fetch-larger-dataset") as span:
+            log.info("Determining Larger Dataset.")
+            time.sleep(0.1)
+            log.info("Larger dataset is classified.FRB")
         if random.random() < P_REGISTRATION_CONFLICT:
             log.error(
                 f"registration conflict: event {event_id} already exists in catalog — "
@@ -56,26 +60,24 @@ def register_event(tel: CHIMEInstrument, event_id: str) -> str | None:
                 "helixSourceLine": 55,
             })
             return None
-
         op.set_attribute("helix.chime.registration_status", "ok")
-        log.info(f"event {event_id} registered in catalog")
+        log.info(f"event {event_id} registered in Datatrail")
     return event_id
 
 
 def replicate(tel: CHIMEInstrument, event_id: str) -> None:
     """Copy data to offsite HPC clusters. Each destination is its own operation + trace."""
-    dests = random.sample(REPLICATION_DESTS, k=random.randint(1, 2))
-    for dest in dests:
-        size_mb = round(random.uniform(200.0, 800.0), 1)
-        with tel.operate("replication", entity_id=event_id) as op:
-            op.set_attribute("helix.chime.replication_dest", dest)
-            op.set_attribute("helix.chime.replication_size_mb", size_mb)
+    dest = "Minoc"
+    size_mb = round(random.uniform(200.0, 800.0), 1)
+    with tel.operate(f"datatrail_replication_{dest}", entity_id=event_id) as op:
+        op.set_attribute("helix.chime.replication_dest", dest)
+        op.set_attribute("helix.chime.replication_size_mb", size_mb)
 
-            if random.random() < P_REPLICATION_TIMEOUT:
-                log.error(
-                    f"replication to {dest} timed out after partial transfer of {size_mb:.1f} MB "
-                    "— remote HPC storage may be unavailable"
-                )
-                op.fail("replication_timeout")
-            else:
-                log.info(f"replication to {dest} complete: {size_mb:.1f} MB transferred successfully")
+        if random.random() < P_REPLICATION_TIMEOUT:
+            log.error(
+                f"replication to {dest} timed out after partial transfer of {size_mb:.1f} MB "
+                "— remote HPC storage may be unavailable"
+            )
+            op.fail("replication_timeout")
+        else:
+            log.info(f"replication to {dest} complete: {size_mb:.1f} MB transferred successfully")

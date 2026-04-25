@@ -7,6 +7,7 @@ collection for genuine astrophysical events.
 import logging
 import random
 import uuid
+import time
 
 from . import CHIMEInstrument
 
@@ -14,7 +15,6 @@ log = logging.getLogger("chime.l2")
 
 
 P_CLUSTERING_TIMEOUT = 0.01   # 1%  of blocks: insufficient beams reported in window
-P_RPC_FAILURE        = 0.10   # 10% of ring buffer RPC calls fail
 
 
 def cluster(
@@ -44,7 +44,19 @@ def cluster(
     # Sample a representative subset of candidates as parents.
     k = min(random.choices([1, 2, 3], weights=[50, 40, 10])[0], len(all_cand_ids))
     parents = random.sample(all_cand_ids, k) if k > 0 else []
-    token = tel.track("l2-clustering", id=event_id, parents=parents)
+    token = tel.track("l2-l3", id=event_id, parents=parents)
+
+    # Call RFI sifter
+    rfi_sifter(tel)
+
+    # Call localizer
+    localizer(tel)
+
+    # Call DM checker
+    dm_checker(tel)
+
+    # Can known source sifter
+    known_source_sifter(tel)
 
     classification = random.choices(
         ["FRB", "PULSAR", "RFI", "UNKNOWN"],
@@ -71,25 +83,33 @@ def cluster(
         "contributing candidate(s) — triggering post-detection pipeline"
     )
     token.add_event("helix.event.candidate_promoted", {"classification": classification})
+
+    # Call Action picker
+    action_picker(tel)
     tel.complete(token)
     return event_id
 
+def rfi_sifter(tel):
+    with tel.child_span("rfi_sifter") as span:
+        time.sleep(0.001)
+        log.info("hello from RFI sifter.")
 
-def trigger_ring_buffer(tel: CHIMEInstrument, event_id: str) -> None:
-    """
-    RPC call to upstream node to pull raw data from ring buffers.
-    This is an internal L2 step — it appears as a child span of the event
-    entity's trace rather than a separate HelixObs entity.
-    """
-    with tel.child_span("ring-buffer-rpc", parent_id=event_id) as span:
-        if random.random() < P_RPC_FAILURE:
-            log.error(
-                "ring buffer RPC timeout: upstream correlator node did not respond "
-                "within collection window — raw voltages may be lost"
-            )
-            span.set_attribute("helix.chime.rpc_status", "timeout")
-            span.record_exception(RuntimeError("rpc_timeout"))
-        else:
-            size_mb = round(random.uniform(100.0, 500.0), 1)
-            span.set_attribute("helix.chime.buffer_size_mb", size_mb)
-            log.info(f"ring buffer data collected: {size_mb:.1f} MB retrieved from correlator")
+def localizer(tel):
+    with tel.child_span("localizer") as span:
+        time.sleep(0.001)
+        log.info("hello from localizer.")
+
+def dm_checker(tel):
+    with tel.child_span("dm_checker") as span:
+        time.sleep(0.001)
+        log.info("hello from DM checker.")
+
+def known_source_sifter(tel):
+    with tel.child_span("known_source_sifter") as span:
+        time.sleep(0.001)
+        log.info("hello from Known Source Sifter.")
+
+def action_picker(tel):
+    with tel.child_span("action_picker") as span:
+        time.sleep(0.001)
+        log.info("hello from Action Picker.")

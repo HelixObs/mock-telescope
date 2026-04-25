@@ -14,15 +14,14 @@ Environment variables:
 
 import logging
 import os
-import random
 import time
-import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from helixobs.logging import configure_logging
 from chime import CHIMEInstrument
 from chime.l1 import process_beam
-from chime.l2 import cluster, trigger_ring_buffer
+from chime.l2 import cluster
+from chime.l4 import l4
 from chime.post_detection import convert_to_hdf5, register_event, replicate
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
@@ -70,7 +69,7 @@ def run_block() -> None:
     if event_id is None:
         return
 
-    trigger_ring_buffer(tel, event_id)
+    l4(tel, event_id)
 
     # Post-detection pipeline (child spans of the FRB event)
     if convert_to_hdf5(tel, event_id) is None:
@@ -87,6 +86,6 @@ def run_block() -> None:
 while True:
     try:
         run_block()
-    except Exception:
-        log.exception("simulation step failed")
+    except Exception as e:
+        log.exception("simulation step failed: " + str(e))
     time.sleep(INTERVAL)
