@@ -50,6 +50,9 @@ ATTR_N_CANDIDATES     = "helix.chime.n_candidates"
 # Candidate attributes
 ATTR_DM               = "helix.chime.dm"
 ATTR_SNR              = "helix.chime.snr"
+ATTR_DM_ERROR         = "helix.chime.dm_error"
+ATTR_TIME_ERROR       = "helix.chime.time_error"
+ATTR_TREE_INDEX       = "helix.chime.tree_index"
 ATTR_ARRIVAL_DELAY_NS = "helix.chime.arrival_delay_ns"
 
 # Event attributes
@@ -119,6 +122,9 @@ class CHIMEInstrument(Instrument):
         beam_id: int,
         dm: float,
         snr: float,
+        dm_error: float = 0.0,
+        time_error: float = 0.0,
+        tree_index: int = 0,
         arrival_delay_ns: int = 0,
     ) -> None:
         """Stamp CHIME candidate semantic convention attributes onto a span."""
@@ -126,6 +132,9 @@ class CHIMEInstrument(Instrument):
         span.set_attribute(ATTR_BEAM_ID,          beam_id)
         span.set_attribute(ATTR_DM,               dm)
         span.set_attribute(ATTR_SNR,              snr)
+        span.set_attribute(ATTR_DM_ERROR,         dm_error)
+        span.set_attribute(ATTR_TIME_ERROR,       time_error)
+        span.set_attribute(ATTR_TREE_INDEX,       tree_index)
         span.set_attribute(ATTR_ARRIVAL_DELAY_NS, arrival_delay_ns)
 
     def event_metadata(

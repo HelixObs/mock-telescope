@@ -16,6 +16,50 @@ log = logging.getLogger("chime.l1")
 
 RACKS = [f"rack-{i}" for i in range(1, 9)]
 
+
+def replay_candidates(tel: "CHIMEInstrument", block_candidates: list[dict]) -> list[str]:
+    """Emit one 8-second block of real L1 candidates grouped by beam.
+
+    block_candidates is a list of records from l1_headers.json, all falling
+    within the same 8-second window.  Each record must have:
+        beam_id, dm, snr, dm_error, time_error, tree_index
+    """
+    by_beam: dict[int, list[dict]] = {}
+    for rec in block_candidates:
+        by_beam.setdefault(rec["beam_id"], []).append(rec)
+
+    survivors: list[str] = []
+    for beam_id, recs in by_beam.items():
+        rack = RACKS[beam_id % len(RACKS)]
+        beam_id_str = f"beam-{beam_id}-{uuid.uuid4().hex[:12]}"
+
+        token = tel.track("l1-search", id=beam_id_str)
+        tel.beam_metadata(token, beam_id=beam_id, rack=rack)
+
+        if random.random() < P_RACK_DROPOUT:
+            log.error(f"FPGA rack dropout on {rack}: beam {beam_id} lost")
+            tel.error(token, metadata={"message": "fpga_rack_dropout", "rack": rack, "beam": beam_id})
+            continue
+
+        for rec in recs:
+            cand_id = f"cand-{uuid.uuid4().hex[:12]}"
+            cand_token = tel.track("l1-candidate", id=cand_id, parents=[beam_id_str])
+            tel.candidate_metadata(
+                cand_token,
+                beam_id=rec["beam_id"],
+                dm=rec["dm"],
+                snr=rec["snr"],
+                dm_error=rec["dm_error"],
+                time_error=rec["time_error"],
+                tree_index=rec["tree_index"],
+            )
+            tel.complete(cand_token)
+            survivors.append(cand_id)
+
+        tel.complete(token, metadata={"n_candidates": len(recs)})
+
+    return survivors
+
 P_RACK_DROPOUT      = 0.02   # 2%  of beams lose their FPGA rack
 P_BEAM_HAS_SIGNAL   = 1.0   # 100% of beams find candidates (~8 of 32)
 
