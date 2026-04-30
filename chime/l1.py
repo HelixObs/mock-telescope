@@ -33,17 +33,17 @@ def replay_candidates(tel: "CHIMEInstrument", block_candidates: list[dict]) -> l
         rack = RACKS[beam_id % len(RACKS)]
         beam_id_str = f"beam-{beam_id}-{uuid.uuid4().hex[:12]}"
 
-        token = tel.track("l1-search", id=beam_id_str)
+        token = tel.create("l1-search", id=beam_id_str).start()
         tel.beam_metadata(token, beam_id=beam_id, rack=rack)
 
         if random.random() < P_RACK_DROPOUT:
             log.error(f"FPGA rack dropout on {rack}: beam {beam_id} lost")
-            tel.error(token, metadata={"message": "fpga_rack_dropout", "rack": rack, "beam": beam_id})
+            token.error(metadata={"message": "fpga_rack_dropout", "rack": rack, "beam": beam_id})
             continue
 
         for rec in recs:
             cand_id = f"cand-{uuid.uuid4().hex[:12]}"
-            cand_token = tel.track("l1-candidate", id=cand_id, parents=[beam_id_str])
+            cand_token = tel.create("l1-candidate", id=cand_id, parents=[beam_id_str]).start()
             tel.candidate_metadata(
                 cand_token,
                 beam_id=rec["beam_id"],
@@ -53,10 +53,10 @@ def replay_candidates(tel: "CHIMEInstrument", block_candidates: list[dict]) -> l
                 time_error=rec["time_error"],
                 tree_index=rec["tree_index"],
             )
-            tel.complete(cand_token)
+            cand_token.complete()
             survivors.append(cand_id)
 
-        tel.complete(token, metadata={"n_candidates": len(recs)})
+        token.complete(metadata={"n_candidates": len(recs)})
 
     return survivors
 
@@ -69,7 +69,7 @@ def process_beam(tel: CHIMEInstrument, beam_id: int) -> list[str]:
     rack = RACKS[beam_id % len(RACKS)]
     beam_id_str = f"beam-{beam_id}-{uuid.uuid4().hex[:12]}"
 
-    token = tel.track("l1-search", id=beam_id_str)
+    token = tel.create("l1-search", id=beam_id_str).start()
     tel.beam_metadata(token, beam_id=beam_id, rack=rack)
 
     if random.random() < P_RACK_DROPOUT:
@@ -77,7 +77,7 @@ def process_beam(tel: CHIMEInstrument, beam_id: int) -> list[str]:
             f"FPGA rack dropout on {rack}: beam {beam_id} lost all visibility, "
             "aborting block processing"
         )
-        tel.error(token, metadata={"message": "fpga_rack_dropout", "rack": rack, "beam": beam_id})
+        token.error(metadata={"message": "fpga_rack_dropout", "rack": rack, "beam": beam_id})
         return []
 
     # RFI excision: flag bad channels before dedispersion.
@@ -106,14 +106,14 @@ def process_beam(tel: CHIMEInstrument, beam_id: int) -> list[str]:
                 snr = round(random.uniform(8.0, 80.0), 1)
                 dm  = round(random.uniform(50.0, 2000.0), 1)
 
-                cand_token = tel.track("l1-candidate", id=cand_id, parents=[beam_id_str])
+                cand_token = tel.create("l1-candidate", id=cand_id, parents=[beam_id_str]).start()
                 tel.candidate_metadata(cand_token, beam_id=beam_id, dm=dm, snr=snr)
                 log.info(f"L1 candidate passed RFI veto: SNR={snr}, DM={dm:.1f} pc/cm³, beam={beam_id}")
-                tel.complete(cand_token)
+                cand_token.complete()
                 survivors.append(cand_id)
 
     log.info(
         f"beam {beam_id} on {rack} complete: {len(survivors)} surviving candidate(s) forwarded to L2"
     )
-    tel.complete(token, metadata={"n_candidates": len(survivors)})
+    token.complete(metadata={"n_candidates": len(survivors)})
     return survivors

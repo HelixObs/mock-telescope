@@ -77,6 +77,6 @@ GATEWAY_ENDPOINT=localhost:4317 python simulate.py
 
 Create a new top-level package (e.g. `vla/`) mirroring the `chime/` structure:
 1. Subclass `Instrument` from `helixobs` for the domain.
-2. Implement pipeline stage functions using `tel.track/complete/error` and `tel.operate`.
+2. Implement pipeline stage functions using `tel.create().start()/complete()/error()` and `tel.operate`.
 3. Add a `simulate_<instrument>.py` entrypoint.
 4. Add a Docker service in `deploy/docker-compose.yml`.

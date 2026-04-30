@@ -15,7 +15,7 @@ Usage:
         endpoint="interceptor.local:4317",
     )
 
-    with tel.stage("frb_classifier", id=cand_id, parents=[block_id]) as span:
+    with tel.create("frb_classifier", id=cand_id, parents=[block_id]) as span:
         result = classify(candidate)
         if result.rfi_probability > 0.9:
             span.add_event("helix.event.rfi_flagged", {

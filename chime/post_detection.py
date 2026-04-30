@@ -31,7 +31,7 @@ def convert_to_hdf5(tel: CHIMEInstrument, event_id: str) -> str | None:
                 f"HDF5 write failed for event {event_id}: NFS mount unresponsive or scratch disk full, "
                 "raw voltage data at risk"
             )
-            op.fail("hdf5_write_error")
+            op.error({"message": "hdf5_write_error"})
             return None
 
         path    = f"/data/chime/frb/{event_id}.hdf5"
@@ -55,7 +55,8 @@ def register_event(tel: CHIMEInstrument, event_id: str) -> str | None:
                 f"registration conflict: event {event_id} already exists in catalog — "
                 "possible duplicate trigger from overlapping beam coverage"
             )
-            op.fail("registration_conflict", metadata={
+            op.error({
+                "message": "registration_conflict",
                 "helixSource": "https://github.com/HelixObs/mock-telescope/blob/main/chime/post_detection.py",
                 "helixSourceLine": 55,
             })
@@ -78,6 +79,6 @@ def replicate(tel: CHIMEInstrument, event_id: str) -> None:
                 f"replication to {dest} timed out after partial transfer of {size_mb:.1f} MB "
                 "— remote HPC storage may be unavailable"
             )
-            op.fail("replication_timeout")
+            op.error({"message": "replication_timeout"})
         else:
             log.info(f"replication to {dest} complete: {size_mb:.1f} MB transferred successfully")

@@ -29,12 +29,12 @@ def cluster(
     """
     if random.random() < P_CLUSTERING_TIMEOUT:
         cluster_id = f"l2cl-{uuid.uuid4().hex[:10]}"
-        token = tel.track("l2-clustering", id=cluster_id)
+        token = tel.create("l2-clustering", id=cluster_id).start()
         log.error(
             f"L2 clustering timeout: only {len(all_cand_ids)} candidate(s) received "
             "within aggregation window — too few beams reporting, skipping block"
         )
-        tel.error(token, metadata={
+        token.error(metadata={
             "message":      "clustering_timeout",
             "n_candidates": len(all_cand_ids),
         })
@@ -44,7 +44,7 @@ def cluster(
     # Sample a representative subset of candidates as parents.
     k = min(random.choices([1, 2, 3], weights=[50, 40, 10])[0], len(all_cand_ids))
     parents = random.sample(all_cand_ids, k) if k > 0 else []
-    token = tel.track("l2-l3", id=event_id, parents=parents)
+    token = tel.create("l2-l3", id=event_id, parents=parents).start()
 
     # Call RFI sifter
     rfi_sifter(tel)
@@ -75,7 +75,7 @@ def cluster(
             f"event classified as {classification} — not astrophysical, "
             f"discarding {len(all_cand_ids)} candidate(s)"
         )
-        tel.complete(token)
+        token.complete()
         return None
 
     log.info(
@@ -86,7 +86,7 @@ def cluster(
 
     # Call Action picker
     action_picker(tel)
-    tel.complete(token)
+    token.complete()
     return event_id
 
 def rfi_sifter(tel):
