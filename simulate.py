@@ -80,8 +80,10 @@ def _load_replay_blocks(path: str) -> list[tuple[float, list[dict]]]:
 
 
 REPLAY_BLOCKS: list[tuple[float, list[dict]]] = []
-if L1_REPLAY_FILE:
+if L1_REPLAY_FILE and os.path.isfile(L1_REPLAY_FILE):
     REPLAY_BLOCKS = _load_replay_blocks(L1_REPLAY_FILE)
+elif L1_REPLAY_FILE:
+    log.warning(f"L1_REPLAY_FILE={L1_REPLAY_FILE!r} is not a regular file, falling back to random mode")
 
 # ── Block runners ──────────────────────────────────────────────────────────────
 
