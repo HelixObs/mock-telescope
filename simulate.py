@@ -25,19 +25,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from helixobs.logging import configure_logging
+from helixobs import setup
 from chime import CHIMEInstrument
 from chime.l1 import process_beam, replay_candidates
 from chime.l2 import cluster
 from chime.l4 import l4
 from chime.post_detection import convert_to_hdf5, register_event, replicate
-
-# ── Logging setup ─────────────────────────────────────────────────────────────
-
-SERVICE_NAME = "chime.simulator"
-configure_logging(otlp=True, service_name=SERVICE_NAME)
-logging.getLogger().setLevel(logging.INFO)
-log = logging.getLogger("chime.simulator")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +41,15 @@ L2_WINDOW        = float(os.environ.get("L2_WINDOW_S", "1.0"))
 L1_REPLAY_FILE   = os.environ.get("L1_REPLAY_FILE", "")
 REPLAY_SPEED     = float(os.environ.get("REPLAY_SPEED", "1.0"))
 
-tel = CHIMEInstrument(service_name=SERVICE_NAME, endpoint=GATEWAY)
+tel = setup(
+    "chime.simulator",
+    instrument_id="CHIME",
+    endpoint=GATEWAY,
+    otlp=True,
+    instrument_class=CHIMEInstrument,
+)
+logging.getLogger().setLevel(logging.INFO)
+log = logging.getLogger("chime.simulator")
 
 # ── Replay loader ─────────────────────────────────────────────────────────────
 
