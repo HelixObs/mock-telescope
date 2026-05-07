@@ -34,7 +34,8 @@ from chime.post_detection import convert_to_hdf5, register_event, replicate
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 
-configure_logging(otlp=True)
+SERVICE_NAME = "chime.simulator"
+configure_logging(otlp=True, service_name=SERVICE_NAME)
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger("chime.simulator")
 
@@ -47,7 +48,7 @@ L2_WINDOW        = float(os.environ.get("L2_WINDOW_S", "1.0"))
 L1_REPLAY_FILE   = os.environ.get("L1_REPLAY_FILE", "")
 REPLAY_SPEED     = float(os.environ.get("REPLAY_SPEED", "1.0"))
 
-tel = CHIMEInstrument(service_name="chime.simulator", endpoint=GATEWAY)
+tel = CHIMEInstrument(service_name=SERVICE_NAME, endpoint=GATEWAY)
 
 # ── Replay loader ─────────────────────────────────────────────────────────────
 
