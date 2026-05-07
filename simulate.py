@@ -43,7 +43,6 @@ REPLAY_SPEED     = float(os.environ.get("REPLAY_SPEED", "1.0"))
 
 tel = setup(
     "chime.simulator",
-    instrument_id="CHIME",
     endpoint=GATEWAY,
     otlp=True,
     instrument_class=CHIMEInstrument,
