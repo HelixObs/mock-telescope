@@ -73,12 +73,13 @@ class CHIMEInstrument(Instrument):
     def __init__(
         self,
         service_name: str,
+        instrument_id: str = INSTRUMENT_ID,
         endpoint: str = "localhost:4317",
         insecure: bool = True,
     ) -> None:
         super().__init__(
             service_name=service_name,
-            instrument_id=INSTRUMENT_ID,
+            instrument_id=instrument_id,
             endpoint=endpoint,
             insecure=insecure,
         )
