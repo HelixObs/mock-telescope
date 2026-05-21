@@ -1,7 +1,7 @@
 # mock-telescope
 
 Reference CHIME pipeline simulator — generates a continuous stream of fake radio telescope
-data and ships it to the HelixObs gateway via OTLP. Used for development, acceptance
+data and ships it to the HelixObs herald via OTLP. Used for development, acceptance
 testing, and demo purposes.
 
 ## What it does

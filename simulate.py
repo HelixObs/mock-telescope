@@ -34,7 +34,7 @@ from chime.post_detection import convert_to_hdf5, register_event, replicate
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-GATEWAY          = os.environ.get("HERALD_ENDPOINT", "herald:4317")
+HERALD           = os.environ.get("HERALD_ENDPOINT", "herald:4317")
 INTERVAL         = float(os.environ.get("BLOCK_INTERVAL_S", "3.0"))
 N_BEAMS          = int(os.environ.get("N_BEAMS", "32"))
 L2_WINDOW        = float(os.environ.get("L2_WINDOW_S", "1.0"))
@@ -43,7 +43,7 @@ REPLAY_SPEED     = float(os.environ.get("REPLAY_SPEED", "1.0"))
 
 tel = setup(
     "chime.simulator",
-    endpoint=GATEWAY,
+    endpoint=HERALD,
     otlp=True,
     instrument_class=CHIMEInstrument,
 )
