@@ -61,7 +61,7 @@ convention.
 
 | Variable | Default | Description |
 |---|---|---|
-| `HERALD_ENDPOINT` | `gateway:4317` | HelixObs gateway gRPC address |
+| `HERALD_ENDPOINT` | `herald:4317` | HelixObs herald gRPC address |
 | `BLOCK_INTERVAL_S` | `3.0` | Seconds between simulated data blocks |
 | `N_BEAMS` | `32` | Number of L1 beams per block |
 | `L2_WINDOW_S` | `1.0` | Seconds L2 waits for all beam results before clustering |
