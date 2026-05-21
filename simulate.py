@@ -65,6 +65,9 @@ def _load_replay_blocks(path: str) -> list[tuple[float, list[dict]]]:
         records = json.load(f)
 
     records.sort(key=lambda r: r["timestamp_utc"])
+    if not records:
+        log.warning("Replay file is empty, falling back to random mode")
+        return []
     t0 = datetime.fromisoformat(records[0]["timestamp_utc"]).timestamp()
 
     blocks: dict[int, list[dict]] = {}
