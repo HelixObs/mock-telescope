@@ -9,7 +9,7 @@ Two modes:
   - Random (default): generates synthetic candidates as before.
 
 Environment variables:
-    GATEWAY_ENDPOINT   gRPC endpoint of the HelixObs gateway (default: gateway:4317)
+    HERALD_ENDPOINT    gRPC endpoint of the HelixObs herald (default: herald:4317)
     BLOCK_INTERVAL_S   Random mode only: seconds between blocks (default: 3.0)
     N_BEAMS            Random mode only: beams per block (default: 32)
     L2_WINDOW_S        Seconds L2 waits before clustering (default: 1.0)
@@ -34,7 +34,7 @@ from chime.post_detection import convert_to_hdf5, register_event, replicate
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-GATEWAY          = os.environ.get("GATEWAY_ENDPOINT", "gateway:4317")
+GATEWAY          = os.environ.get("HERALD_ENDPOINT", "herald:4317")
 INTERVAL         = float(os.environ.get("BLOCK_INTERVAL_S", "3.0"))
 N_BEAMS          = int(os.environ.get("N_BEAMS", "32"))
 L2_WINDOW        = float(os.environ.get("L2_WINDOW_S", "1.0"))
